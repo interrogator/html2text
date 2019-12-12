@@ -143,7 +143,7 @@ class HTML2Text(html.parser.HTMLParser):
     def handle(self, data: str) -> str:
         self.feed(data)
         self.feed("")
-        markdown = self.optwrap(self.finish())
+        markdown = self.finish()
         if self.pad_tables:
             return pad_tables_in_text(markdown)
         else:
@@ -339,9 +339,11 @@ class HTML2Text(html.parser.HTMLParser):
             self.p()
             if start:
                 self.inheader = True
-                self.o(hn(tag) * "#" + " ")
+                level = hn(tag)
+                self.o(f"<meta header=true depth={level}>")
             else:
                 self.inheader = False
+                self.o("</meta>")
                 return  # prevent redundant emphasis marks on headers
 
         if tag in ["p", "div"]:
@@ -697,6 +699,8 @@ class HTML2Text(html.parser.HTMLParser):
         """
         Deal with indentation and whitespace
         """
+        data = data.strip()
+
         if self.abbr_data is not None:
             self.abbr_data += data
 
@@ -883,66 +887,6 @@ class HTML2Text(html.parser.HTMLParser):
             nest_count = int(style["margin-left"][:-2]) // self.google_list_indent
 
         return nest_count
-
-    def optwrap(self, text: str) -> str:
-        """
-        Wrap all paragraphs in the provided text.
-
-        :type text: str
-
-        :rtype: str
-        """
-        if not self.body_width:
-            return text
-
-        result = ""
-        newlines = 0
-        # I cannot think of a better solution for now.
-        # To avoid the non-wrap behaviour for entire paras
-        # because of the presence of a link in it
-        if not self.wrap_links:
-            self.inline_links = False
-        for para in text.split("\n"):
-            if len(para) > 0:
-                if not skipwrap(para, self.wrap_links, self.wrap_list_items):
-                    indent = ""
-                    if para.startswith("  " + self.ul_item_mark):
-                        # list item continuation: add a double indent to the
-                        # new lines
-                        indent = "    "
-                    elif para.startswith("> "):
-                        # blockquote continuation: add the greater than symbol
-                        # to the new lines
-                        indent = "> "
-                    wrapped = wrap(
-                        para,
-                        self.body_width,
-                        break_long_words=False,
-                        subsequent_indent=indent,
-                    )
-                    result += "\n".join(wrapped)
-                    if para.endswith("  "):
-                        result += "  \n"
-                        newlines = 1
-                    elif indent:
-                        result += "\n"
-                        newlines = 1
-                    else:
-                        result += "\n\n"
-                        newlines = 2
-                else:
-                    # Warning for the tempted!!!
-                    # Be aware that obvious replacement of this with
-                    # line.isspace()
-                    # DOES NOT work! Explanations are welcome.
-                    if not config.RE_SPACE.match(para):
-                        result += para + "\n"
-                        newlines = 1
-            else:
-                if newlines < 2:
-                    result += "\n"
-                    newlines += 1
-        return result
 
 
 def html2text(html: str, baseurl: str = "", bodywidth: Optional[int] = None) -> str:

@@ -70,8 +70,10 @@ class HTML2Text(html.parser.HTMLParser):
         self.ignore_tables = config.IGNORE_TABLES  # covered in cli
         self.google_doc = False  # covered in cli
         self.ul_item_mark = "*"  # covered in cli
-        self.emphasis_mark = "_"  # covered in cli
-        self.strong_mark = "**"
+        self.left_emphasis_mark = "<meta emph=true>"  # covered in cli
+        self.right_emphasis_mark = "</meta>"  # covered in cli
+        self.left_strong_mark = "<meta strong=true>"
+        self.right_strong_mark = "</meta>"
         self.single_line_break = config.SINGLE_LINE_BREAK  # covered in cli
         self.use_automatic_links = config.USE_AUTOMATIC_LINKS  # covered in cli
         self.hide_strikethrough = False  # covered in cli
@@ -255,11 +257,11 @@ class HTML2Text(html.parser.HTMLParser):
             if strikethrough:
                 self.quiet += 1
             if italic:
-                self.o(self.emphasis_mark)
-                self.drop_white_space += 1
+                self.o(self.left_emphasis_mark)
+                self.drop_white_space += 1  # len(self.left_emphasis_mark) ?
             if bold:
-                self.o(self.strong_mark)
-                self.drop_white_space += 1
+                self.o(self.left_strong_mark)
+                self.drop_white_space += 1  # len(self.left_emphasis_mark) ?
             if fixed:
                 self.o("`")
                 self.drop_white_space += 1
@@ -396,9 +398,11 @@ class HTML2Text(html.parser.HTMLParser):
 
         if tag in ["em", "i", "u"] and not self.ignore_emphasis:
             if start and no_preceding_space(self):
-                emphasis = " " + self.emphasis_mark
+                emphasis = " " + self.left_emphasis_mark
+            elif start:
+                emphasis = self.left_emphasis_mark
             else:
-                emphasis = self.emphasis_mark
+                emphasis = self.right_emphasis_mark
 
             self.o(emphasis)
             if start:
@@ -406,9 +410,11 @@ class HTML2Text(html.parser.HTMLParser):
 
         if tag in ["strong", "b"] and not self.ignore_emphasis:
             if start and no_preceding_space(self):
-                strong = " " + self.strong_mark
+                strong = " " + self.left_strong_mark
+            elif start:
+                strong = self.left_strong_mark
             else:
-                strong = self.strong_mark
+                strong = self.right_strong_mark
 
             self.o(strong)
             if start:

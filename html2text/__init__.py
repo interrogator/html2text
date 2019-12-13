@@ -340,7 +340,7 @@ class HTML2Text(html.parser.HTMLParser):
             if start:
                 self.inheader = True
                 level = hn(tag)
-                self.o(f"<meta header=true depth={level}>")
+                self.o(f"<meta header=true>")
             else:
                 self.inheader = False
                 self.o("</meta>")
@@ -699,7 +699,7 @@ class HTML2Text(html.parser.HTMLParser):
         """
         Deal with indentation and whitespace
         """
-        data = data.strip()
+        # data = data.strip()
 
         if self.abbr_data is not None:
             self.abbr_data += data
